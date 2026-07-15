@@ -1,0 +1,152 @@
+// ============================================================
+// PRISMA SCHEMA — Personal Finance Copilot
+// ============================================================
+// This file defines your database structure.
+// Every model here becomes a table in PostgreSQL.
+// Run `npx prisma migrate dev` to apply changes to the actual DB.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"  // generated TypeScript client goes here
+}
+
+datasource db {
+  provider = "postgresql"
+  // NOTE: In Prisma v7, the database URL is configured in prisma.config.ts
+  // NOT here in schema.prisma — this is a breaking change from Prisma v5/v6
+}
+
+// ============================================================
+// USER
+// The root of everything — every piece of data belongs to a user.
+// ============================================================
+model User {
+  id        String   @id @default(cuid())  // cuid = collision-resistant unique ID
+  email     String   @unique               // no two users with same email
+  name      String?                        // ? means optional (nullable)
+  createdAt DateTime @default(now())       // auto-set when user is created
+
+  // Relations — one user HAS MANY of these:
+  categories        Category[]
+  transactions      Transaction[]
+  budgets           Budget[]
+  goals             Goal[]
+  recurringPayments RecurringPayment[]
+}
+
+// ============================================================
+// CATEGORY
+// Examples: "Food", "Transport", "Salary", "Entertainment"
+// Each user has their OWN categories (userId scopes it to them)
+// ============================================================
+model Category {
+  id     String       @id @default(cuid())
+  name   String                            // e.g., "Food & Dining"
+  type   CategoryType                      // INCOME or EXPENSE (see enum below)
+  userId String                            // foreign key → which user owns this
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+
+  // A user can't have two categories with the same name
+  @@unique([userId, name])
+  // Index for fast lookup: "give me all categories for user X"
+  @@index([userId])
+}
+
+// Enum: a field that can only be one of these exact values
+enum CategoryType {
+  INCOME   // money coming in (salary, freelance)
+  EXPENSE  // money going out (food, rent, transport)
+}
+
+// ============================================================
+// TRANSACTION
+// The heart of the app. Every spend or income is a transaction.
+// The `embedding` field is for RAG (Phase 3) — stores a vector
+// representation of the transaction for AI similarity search.
+// ============================================================
+model Transaction {
+  id          String   @id @default(cuid())
+  amount      Float                          // positive = income, negative = expense
+  description String                         // e.g., "Zomato order", "Monthly salary"
+  date        DateTime                       // when did this transaction happen
+  userId      String
+  categoryId  String
+
+  // We'll add the embedding vector column in Phase 3 (pgvector)
+  // embedding  Unsupported("vector(1536)")?  ← uncomment in Day 7
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  // Indexes for common query patterns:
+  @@index([userId])                // "get all transactions for user X"
+  @@index([userId, date])          // "get transactions for user X in date range"
+  @@index([userId, categoryId])    // "get transactions for user X in category Y"
+}
+
+// ============================================================
+// BUDGET
+// A monthly spending limit for a specific category.
+// e.g., "I want to spend max ₹5000 on Food in July 2025"
+// ============================================================
+model Budget {
+  id           String   @id @default(cuid())
+  monthlyLimit Float                          // maximum allowed spend
+  month        DateTime                       // which month (store as first day: 2025-07-01)
+  userId       String
+  categoryId   String
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  // One budget per category per month per user — no duplicates
+  @@unique([userId, categoryId, month])
+  @@index([userId, month])
+}
+
+// ============================================================
+// GOAL
+// A savings target. e.g., "Save ₹50,000 for a trip by Dec 2025"
+// ============================================================
+model Goal {
+  id            String    @id @default(cuid())
+  name          String                         // e.g., "Europe Trip", "Emergency Fund"
+  targetAmount  Float                          // how much you want to save
+  currentAmount Float     @default(0)          // how much saved so far
+  deadline      DateTime?                      // optional target date
+  createdAt     DateTime  @default(now())
+  userId        String
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============================================================
+// RECURRING PAYMENT
+// Auto-detected repeating charges: Netflix, rent, gym, etc.
+// We detect these by looking at patterns in transactions.
+// ============================================================
+model RecurringPayment {
+  id           String   @id @default(cuid())
+  description  String                          // e.g., "Netflix", "Gym membership"
+  amount       Float                           // expected charge amount
+  intervalDays Int                             // how often: 30 = monthly, 7 = weekly
+  lastSeen     DateTime                        // date of most recent transaction
+  nextExpected DateTime                        // predicted next charge date
+  userId       String
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, nextExpected])  // "show me upcoming payments for user X"
+}
