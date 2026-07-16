@@ -1301,4 +1301,242 @@ td {
   margin-top: var(--space-3);
 }
 
+/* ================================================================
+   BUDGETS PAGE
+   ================================================================ */
+.budgets-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
 
+.budgets-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-bottom: var(--space-7);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.budgets-title { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+
+/* ── Month summary bar ───────────────────────────────────── */
+.budget-month-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bms-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.bms-stat { display: flex; flex-direction: column; gap: var(--space-1); }
+.bms-label { font-size: 0.6875rem; }
+.bms-value { font-size: 1.125rem; color: var(--ink); }
+.bms-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--hairline);
+}
+
+.bms-bar-wrap {
+  height: 4px;
+  background: var(--hairline);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bms-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 600ms ease;
+}
+
+.bms-bar--ok   { background: var(--gain); }
+.bms-bar--warn { background: #c4922a; }
+.bms-bar--over { background: var(--loss); }
+
+.bms-label-pct { font-size: 0.75rem; }
+
+/* ── Add budget form ─────────────────────────────────────── */
+.add-budget-section {
+  background: var(--paper-subtle);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: var(--space-5) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.add-budget-title { margin-bottom: var(--space-1); }
+
+.add-budget-form {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.add-budget-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 160px;
+}
+
+.add-budget-submit {
+  margin-top: 0;
+  flex-shrink: 0;
+  align-self: flex-end;
+  padding: var(--space-3) var(--space-5);
+}
+
+.add-budget-hint { font-size: 0.75rem; }
+
+/* ── Budget cards grid ───────────────────────────────────── */
+.budgets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-5);
+}
+
+.budget-card {
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.budget-card:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
+}
+
+.budget-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.budget-cat-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── Budget progress bar ─────────────────────────────────── */
+.budget-bar-track {
+  height: 6px;
+  background: var(--hairline);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.budget-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.budget-bar--ok   { background: var(--gain); }
+.budget-bar--warn { background: #c4922a; }
+.budget-bar--over { background: var(--loss); }
+
+/* ── Budget amounts row ──────────────────────────────────── */
+.budget-amounts {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.budget-amount-label { font-size: 0.625rem; margin-bottom: 2px; }
+.budget-amount-value { font-size: 1rem; color: var(--ink); }
+.budget-amounts-sep  { color: var(--ink-faint); font-size: 0.75rem; align-self: flex-end; padding-bottom: 2px; }
+
+/* ── Budget footer ───────────────────────────────────────── */
+.budget-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.budget-pct-pill {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  padding: 2px var(--space-2);
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.budget-bar--ok.budget-pct-pill   { background: rgba(74,124,89,0.1);  color: var(--gain); }
+.budget-bar--warn.budget-pct-pill { background: rgba(196,146,42,0.1); color: #c4922a; }
+.budget-bar--over.budget-pct-pill { background: rgba(166,75,66,0.1);  color: var(--loss); }
+
+.budget-projection { font-size: 0.75rem; }
+
+/* ── Budget delete button ────────────────────────────────── */
+.budget-delete-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.budget-card:hover .budget-delete-btn { opacity: 1; }
+
+.budget-delete-btn:hover {
+  border-color: var(--loss);
+  color: var(--loss);
+}
+
+.budget-delete-btn--confirm {
+  opacity: 1 !important;
+  border-color: var(--loss);
+  color: var(--loss);
+  font-size: 0.5625rem;
+  font-family: var(--font-mono);
+  width: auto;
+  padding: 0 4px;
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.budgets-empty {
+  text-align: center;
+  padding: var(--space-10) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.budgets-empty-icon {
+  font-size: 2.5rem;
+  opacity: 0.2;
+}
+
+.budgets-empty-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--ink);
+}
