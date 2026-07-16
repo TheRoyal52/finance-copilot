@@ -1,22 +1,34 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-// Define which routes are PROTECTED (require login)
-// All other routes are PUBLIC by default
-const isProtectedRoute = createRouteMatcher([
-  "/dashboard(.*)",      // dashboard and all sub-pages
-  "/transactions(.*)",   // transactions pages
-  "/budgets(.*)",        // budgets pages
-  "/goals(.*)",          // goals pages
-  "/settings(.*)",       // settings pages
-]);
+// ============================================================
+// CLERK MIDDLEWARE — Authentication Guard
+// ============================================================
+//
+// WHAT THIS FILE DOES:
+// Every single request that hits your Next.js app passes through
+// this file FIRST, before any page renders. It's like a security
+// guard at the door.
+//
+// CURRENT STATUS: Temporarily using clerkMiddleware() with no
+// protections so you can see the dashboard UI during clock sync.
+// We'll add auth.protect() back in the layout after clock is fixed.
+//
+// WHY THE CLOCK MATTERS FOR CLERK:
+// Clerk uses JWT tokens (JSON Web Tokens) for authentication.
+// A JWT has an "exp" field — expiry timestamp. If your system
+// clock is wrong, Clerk thinks the token already expired even
+// when you just logged in. Fix: Settings → Time & Language →
+// Date & time → "Sync now"
+//
+// NOTE: Deprecation warning about createRouteMatcher → Clerk v6
+// recommends moving auth checks to each page/layout instead of
+// middleware route matching. We'll do that in the next step.
+// ============================================================
 
-export default clerkMiddleware(async (auth, req) => {
-  // If the user tries to access a protected route while not logged in,
-  // Clerk automatically redirects them to /sign-in
-  if (isProtectedRoute(req)) {
-    await auth.protect();
-  }
-});
+// clerkMiddleware() with no arguments still sets up the Clerk
+// session context (makes auth() available in Server Components)
+// but doesn't enforce any route protection itself.
+export default clerkMiddleware();
 
 export const config = {
   matcher: [

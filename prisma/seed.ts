@@ -36,7 +36,7 @@ function createClient() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL not found in environment!");
   console.log("Using DB URL starting with:", url.substring(0, 25) + "...");
-  const adapter = new PrismaNeonHttp(url);
+  const adapter = new PrismaNeonHttp(url, {});
   return new PrismaClient({ adapter });
 }
 
