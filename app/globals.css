@@ -1540,3 +1540,206 @@ td {
   font-weight: 500;
   color: var(--ink);
 }
+
+/* ================================================================
+   GOALS PAGE
+   ================================================================ */
+.goals-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.goals-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-bottom: var(--space-7);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.goals-header-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.goals-title { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+.goals-summary { display: flex; flex-direction: column; gap: var(--space-3); }
+.goals-section-label { margin-bottom: var(--space-4); display: block; }
+.goal-add-new-btn { margin-bottom: 0; }
+
+/* ── Goals grid ──────────────────────────────────────────── */
+.goals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-5);
+}
+
+/* ── Goal card ───────────────────────────────────────────── */
+.goal-card {
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.goal-card:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
+}
+
+.goal-card--complete {
+  border-color: rgba(74,124,89,0.3);
+  background: rgba(74,124,89,0.02);
+}
+
+.goal-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.goal-card-title-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.goal-complete-badge {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--gain);
+  letter-spacing: 0.05em;
+}
+
+.goal-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.goal-description { font-size: 0.8125rem; line-height: 1.4; }
+
+/* ── Goal progress bar ───────────────────────────────────── */
+.goal-bar-track {
+  height: 8px;
+  background: var(--hairline);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.goal-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 800ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.goal-bar--progress { background: var(--brass); }
+.goal-bar--near     { background: var(--gain); }
+.goal-bar--complete {
+  background: var(--gain);
+  box-shadow: 0 0 8px rgba(74,124,89,0.3);
+}
+
+/* ── Goal amounts ────────────────────────────────────────── */
+.goal-amounts {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.goal-amount-label { font-size: 0.625rem; margin-bottom: 2px; }
+.goal-amount-value { font-size: 1rem; color: var(--ink); }
+
+/* ── Goal footer ─────────────────────────────────────────── */
+.goal-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.goal-deadline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+}
+
+.goal-deadline-val { color: var(--ink); }
+.goal-days-left { font-size: 0.75rem; }
+.goal-daily-needed { font-size: 0.75rem; }
+
+/* ── Add savings inline ──────────────────────────────────── */
+.goal-add-savings { border-top: 1px solid var(--hairline); padding-top: var(--space-3); }
+
+.goal-add-btn {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: 1px dashed var(--hairline);
+  border-radius: 4px;
+  color: var(--ink-muted);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.goal-add-btn:hover {
+  border-color: var(--brass);
+  color: var(--brass);
+}
+
+.goal-add-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.goal-save-btn {
+  padding: var(--space-2) var(--space-4);
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+
+.goal-save-btn:hover { background: var(--gain); }
+.goal-save-btn:disabled { opacity: 0.5; }
+
+.goal-cancel-btn {
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  color: var(--ink-muted);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+/* ── Add goal form layout ────────────────────────────────── */
+.add-goal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.add-goal-row {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
