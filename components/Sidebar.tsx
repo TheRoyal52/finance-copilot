@@ -20,8 +20,8 @@ export default function Sidebar() {
   return (
     <aside className="sidebar" aria-label="Main navigation">
       <div className="sidebar-brand">
-        <span className="sidebar-logo">⬡</span>
-        <span className="sidebar-name">Ledger</span>
+        <span className="sidebar-logo">✦</span>
+        <span className="sidebar-name">Finpilot</span>
       </div>
 
       <nav className="sidebar-nav">

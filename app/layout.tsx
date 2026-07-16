@@ -1,34 +1,42 @@
-import {ClerkProvider} from "@clerk/nextjs";
+// app/layout.tsx — Root layout (wraps EVERYTHING)
+//
+// WHY IS THIS THE ROOT LAYOUT?
+// In Next.js App Router, app/layout.tsx is the outermost shell.
+// It wraps every single page in the app. It renders the <html>
+// and <body> tags — no other file should do this.
+//
+// WHY CLERKPROVIDER HERE?
+// Clerk's auth state needs to be available everywhere — dashboard,
+// sign-in page, API routes. Putting it at the root means every
+// child component can call useAuth(), useUser(), auth() etc.
+// It's like Redux Provider — must wrap everything.
+//
+// WHY NOT LOAD FONTS FROM next/font HERE?
+// We load fonts via Google Fonts @import in globals.css instead.
+// This gives us more control (italic optical sizes for Fraunces).
+// next/font would require font definitions here which couples the
+// font choices to this layout file.
+
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Finance Copilot — AI-Powered Personal Finance",
-  description: "Track your spending, set budgets, and get AI-powered insights to improve your financial health.",
+  title: {
+    // Template: child pages can set just "Dashboard" and it becomes
+    // "Dashboard — Finpilot" automatically
+    template: "%s — Finpilot",
+    default: "Finpilot — AI-Powered Finance Copilot",
+  },
+  description:
+    "Track spending, set budgets, and get AI-powered financial insights. Your ledger that talks back.",
+  keywords: ["personal finance", "budget tracker", "AI finance", "expense tracker"],
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
+    <html lang="en" className="h-full">
+      <body className="h-full">
         <ClerkProvider>
           {children}
         </ClerkProvider>
