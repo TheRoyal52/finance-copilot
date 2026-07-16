@@ -95,13 +95,21 @@ export async function getTransactions(filters: TransactionFilters = {}) {
   };
 }
 
-// ── All categories that have transactions ──────────────────
+// ── All categories that have transactions (for filter dropdown) ─
 export async function getTransactionCategories() {
   const userId = await getDemoUserId();
   return prisma.category.findMany({
     where: { transactions: { some: { userId } } },
     select: { name: true, type: true },
     orderBy: { name: "asc" },
+  });
+}
+
+// ── All categories with id (for Add Transaction drawer) ────
+export async function getAllCategories() {
+  return prisma.category.findMany({
+    select: { id: true, name: true, type: true },
+    orderBy: [{ type: "asc" }, { name: "asc" }],
   });
 }
 

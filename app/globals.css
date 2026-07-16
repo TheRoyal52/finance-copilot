@@ -1026,6 +1026,279 @@ td {
   letter-spacing: 0.03em;
 }
 
+/* ================================================================
+   ADD TRANSACTION BUTTON
+   ================================================================ */
+.add-tx-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  white-space: nowrap;
+}
 
+.add-tx-btn:hover {
+  background: var(--brass);
+  transform: translateY(-1px);
+}
+
+.add-tx-btn:active { transform: translateY(0); }
+
+.tx-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+/* ================================================================
+   SLIDE-IN DRAWER
+   ================================================================ */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 27, 25, 0.4);
+  z-index: 40;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 200ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 400px;
+  max-width: 100vw;
+  background: var(--paper);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+  transform: translateX(100%);
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+
+.drawer--open { transform: translateX(0); }
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  border-bottom: 1px solid var(--hairline);
+  position: sticky;
+  top: 0;
+  background: var(--paper);
+  z-index: 1;
+}
+
+.drawer-title {
+  font-size: 1.5rem;
+  color: var(--ink);
+}
+
+.drawer-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+  background: transparent;
+  font-size: 1.25rem;
+  color: var(--ink-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all var(--transition-fast);
+}
+
+.drawer-close:hover {
+  border-color: var(--loss);
+  color: var(--loss);
+}
+
+/* ── Form fields ─────────────────────────────────────────── */
+.drawer-form {
+  flex: 1;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.field-label {
+  font-size: 0.6875rem;
+}
+
+.field-hint {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.amount-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.amount-currency {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.field-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-3);
+  background: var(--paper-subtle);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  color: var(--ink);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+}
+
+.field-input:focus {
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px rgba(176, 141, 87, 0.12);
+}
+
+.amount-input {
+  padding-left: calc(var(--space-3) + 1rem);
+  font-size: 1.25rem;
+  font-family: var(--font-mono);
+}
+
+.field-select { cursor: pointer; }
+
+.form-error {
+  padding: var(--space-3) var(--space-4);
+  background: rgba(166, 75, 66, 0.08);
+  border: 1px solid rgba(166, 75, 66, 0.2);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: var(--loss);
+}
+
+.form-submit {
+  padding: var(--space-3) var(--space-4);
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  margin-top: auto;
+}
+
+.form-submit:hover:not(:disabled) { background: var(--brass); }
+.form-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.form-submit--loading { opacity: 0.7; }
+
+/* ── Drawer tip box ──────────────────────────────────────── */
+.drawer-tip {
+  margin: var(--space-4) var(--space-6) var(--space-6);
+  padding: var(--space-4);
+  background: rgba(176, 141, 87, 0.06);
+  border: 1px solid rgba(176, 141, 87, 0.15);
+  border-radius: 4px;
+}
+
+.drawer-tip-title {
+  margin-bottom: var(--space-1);
+  color: var(--brass);
+}
+
+.drawer-tip-text { font-size: 0.8125rem; line-height: 1.5; }
+
+/* ── Delete button ───────────────────────────────────────── */
+.col-actions { width: 60px; text-align: center; }
+.tx-actions  { text-align: center; }
+
+.delete-tx-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  opacity: 0;
+}
+
+.tx-row:hover .delete-tx-btn { opacity: 1; }
+
+.delete-tx-btn:hover {
+  border-color: var(--loss);
+  color: var(--loss);
+  background: rgba(166,75,66,0.06);
+}
+
+.delete-tx-btn--confirm {
+  opacity: 1;
+  border-color: var(--loss);
+  color: var(--loss);
+  font-size: 0.625rem;
+  font-family: var(--font-mono);
+  width: auto;
+  padding: 0 var(--space-2);
+  animation: pulse-border 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-border {
+  from { border-color: var(--loss); }
+  to   { border-color: rgba(166,75,66,0.4); }
+}
+
+/* ── Screen reader only utility ──────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.tx-empty-hint {
+  font-size: 0.875rem;
+  margin-top: var(--space-3);
+}
 
 
