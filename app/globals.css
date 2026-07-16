@@ -689,3 +689,23 @@ td {
   .trail-cursor { animation: none; }
 }
 
+/* ================================================================
+   STUB / COMING SOON PAGES
+   ================================================================ */
+.stub-page {
+  padding-top: var(--space-16);
+  max-width: 480px;
+}
+
+.stub-title {
+  font-size: 2rem;
+  color: var(--ink);
+  margin: var(--space-2) 0 var(--space-4);
+}
+
+.stub-desc {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+
