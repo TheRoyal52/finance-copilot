@@ -1,34 +1,47 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 // ============================================================
 // CLERK MIDDLEWARE — Authentication Guard
 // ============================================================
 //
-// WHAT THIS FILE DOES:
-// Every single request that hits your Next.js app passes through
-// this file FIRST, before any page renders. It's like a security
-// guard at the door.
+// HOW MIDDLEWARE WORKS IN NEXT.JS:
+// Every request passes through this file BEFORE any page renders.
+// It's executed at the Edge (Cloudflare Workers runtime) — meaning
+// it runs globally, extremely fast, with no cold starts.
 //
-// CURRENT STATUS: Temporarily using clerkMiddleware() with no
-// protections so you can see the dashboard UI during clock sync.
-// We'll add auth.protect() back in the layout after clock is fixed.
+// WHY PROTECT AT MIDDLEWARE LEVEL?
+// Even if you hide the "Dashboard" button from unauthenticated
+// users in your UI, a user could directly type /dashboard in the
+// URL bar. Middleware runs BEFORE the page, so it can redirect
+// them to sign-in before any data is fetched or rendered.
 //
-// WHY THE CLOCK MATTERS FOR CLERK:
-// Clerk uses JWT tokens (JSON Web Tokens) for authentication.
-// A JWT has an "exp" field — expiry timestamp. If your system
-// clock is wrong, Clerk thinks the token already expired even
-// when you just logged in. Fix: Settings → Time & Language →
-// Date & time → "Sync now"
+// ROUTE MATCHING:
+// createRouteMatcher defines which URLs need auth.
+// Routes NOT listed here are public (sign-in, sign-up, homepage).
 //
-// NOTE: Deprecation warning about createRouteMatcher → Clerk v6
-// recommends moving auth checks to each page/layout instead of
-// middleware route matching. We'll do that in the next step.
+// CLERK'S AUTH MODEL:
+// auth().protect() → redirects to Clerk's hosted sign-in page
+// The signed-in user's ID is then available everywhere via:
+//   - Server Components: const { userId } = await auth()
+//   - Client Components: const { userId } = useAuth()
 // ============================================================
 
-// clerkMiddleware() with no arguments still sets up the Clerk
-// session context (makes auth() available in Server Components)
-// but doesn't enforce any route protection itself.
-export default clerkMiddleware();
+// Routes that require authentication
+const isProtectedRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/transactions(.*)",
+  "/budgets(.*)",
+  "/goals(.*)",
+  "/settings(.*)",
+  "/api/chat(.*)",
+]);
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) {
+    // If user is not signed in, redirect to /sign-in
+    await auth.protect();
+  }
+});
 
 export const config = {
   matcher: [
@@ -36,7 +49,5 @@ export const config = {
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     // Always run for API routes
     "/(api|trpc)(.*)",
-    // Required for Clerk proxy
-    "/__clerk/:path*",
   ],
 };

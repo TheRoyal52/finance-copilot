@@ -1,10 +1,9 @@
 "use client";
-// components/Sidebar.tsx
-// Client Component — needs usePathname() hook to highlight active route
+// components/Sidebar.tsx — Client Component (needs usePathname hook)
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 const NAV_ITEMS = [
   { href: "/dashboard",    label: "Dashboard",    icon: "◈" },
@@ -16,6 +15,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
 
   return (
     <aside className="sidebar" aria-label="Main navigation">
@@ -33,6 +33,7 @@ export default function Sidebar() {
               href={item.href}
               className={`nav-item${isActive ? " nav-item--active" : ""}`}
               aria-current={isActive ? "page" : undefined}
+              prefetch={true}
             >
               {isActive && <span className="nav-active-bar" aria-hidden="true" />}
               <span className="nav-icon" aria-hidden="true">{item.icon}</span>
@@ -42,10 +43,22 @@ export default function Sidebar() {
         })}
       </nav>
 
+      {/* User account section — click the avatar to get sign out */}
       <div className="sidebar-footer">
         <div className="sidebar-user">
-          <UserButton />
-          <span className="sidebar-user-label">Account</span>
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: "sidebar-avatar",
+              },
+            }}
+          />
+          <div className="sidebar-user-info">
+            <span className="sidebar-user-name">
+              {user?.firstName ?? "Account"}
+            </span>
+            <span className="sidebar-user-hint">click to sign out</span>
+          </div>
         </div>
       </div>
     </aside>

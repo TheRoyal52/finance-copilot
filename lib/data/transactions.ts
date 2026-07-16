@@ -5,6 +5,20 @@
 import { Prisma, CategoryType } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
 
+// ── Get demo user ID dynamically (same as dashboard.ts) ───────
+// IMPORTANT: never hardcode the user ID — the DB auto-generates it.
+// The seed creates a user with email "test@financecopilot.dev"
+// We find them by email and use their actual DB id.
+// In Sprint 2 (Clerk auth), we'll replace with: auth().userId
+async function getDemoUserId(): Promise<string> {
+  const user = await prisma.user.findFirst({
+    where: { email: "test@financecopilot.dev" },
+    select: { id: true },
+  });
+  if (!user) throw new Error("Demo user not found. Run: npx tsx prisma/seed.ts");
+  return user.id;
+}
+
 export interface TransactionFilters {
   category?: string;
   type?: string;
@@ -29,25 +43,16 @@ export async function getTransactions(filters: TransactionFilters = {}) {
     sortOrder = "desc",
   } = filters;
 
+  const userId = await getDemoUserId();
   const skip = (page - 1) * limit;
 
-  // Build Prisma WHERE clause step by step — avoids union type conflicts
-  // Prisma's TypeScript types are strict about how relation filters combine,
-  // so we build the object imperatively instead of with spread operators.
-  const where: Prisma.TransactionWhereInput = {
-    userId: "demo-user-001",
-  };
+  // Build WHERE clause step by step — avoids union type conflicts
+  const where: Prisma.TransactionWhereInput = { userId };
 
-  // Category name filter (on the related Category model)
   if (category) {
-    where.category = {
-      name: { equals: category, mode: "insensitive" },
-    };
+    where.category = { name: { equals: category, mode: "insensitive" } };
   }
 
-  // Category type filter (INCOME / EXPENSE)
-  // CategoryType is a Prisma enum — must cast from string URL param
-  // URL params are always strings, Prisma expects the enum value
   if (type && (type === "INCOME" || type === "EXPENSE")) {
     where.category = {
       ...(where.category as Prisma.CategoryWhereInput ?? {}),
@@ -55,28 +60,20 @@ export async function getTransactions(filters: TransactionFilters = {}) {
     };
   }
 
-  // Full-text description search
   if (q) {
     where.description = { contains: q, mode: "insensitive" };
   }
 
-  // Build sort — only allow safe column names to prevent injection
-  const safeSortBy = (["date", "amount"] as const).includes(
-    sortBy as "date" | "amount"
-  )
+  const safeSortBy = (["date", "amount"] as const).includes(sortBy as "date" | "amount")
     ? (sortBy as "date" | "amount")
     : "date";
-
   const safeOrder = sortOrder === "asc" ? "asc" : "desc";
 
-  // Run count + data in parallel
   const [total, transactions] = await Promise.all([
     prisma.transaction.count({ where }),
     prisma.transaction.findMany({
       where,
-      include: {
-        category: { select: { name: true, type: true } },
-      },
+      include: { category: { select: { name: true, type: true } } },
       orderBy: { [safeSortBy]: safeOrder },
       skip,
       take: limit,
@@ -100,10 +97,9 @@ export async function getTransactions(filters: TransactionFilters = {}) {
 
 // ── All categories that have transactions ──────────────────
 export async function getTransactionCategories() {
+  const userId = await getDemoUserId();
   return prisma.category.findMany({
-    where: {
-      transactions: { some: { userId: "demo-user-001" } },
-    },
+    where: { transactions: { some: { userId } } },
     select: { name: true, type: true },
     orderBy: { name: "asc" },
   });
@@ -111,21 +107,22 @@ export async function getTransactionCategories() {
 
 // ── Summary stats for the page header ─────────────────────
 export async function getTransactionSummary() {
-  const [totalIncome, totalExpenses, transactionCount] = await Promise.all([
+  const userId = await getDemoUserId();
+  const [totalIncome, totalExpenses, count] = await Promise.all([
     prisma.transaction.aggregate({
-      where: { userId: "demo-user-001", amount: { gt: 0 } },
+      where: { userId, amount: { gt: 0 } },
       _sum: { amount: true },
     }),
     prisma.transaction.aggregate({
-      where: { userId: "demo-user-001", amount: { lt: 0 } },
+      where: { userId, amount: { lt: 0 } },
       _sum: { amount: true },
     }),
-    prisma.transaction.count({ where: { userId: "demo-user-001" } }),
+    prisma.transaction.count({ where: { userId } }),
   ]);
 
   return {
     income: totalIncome._sum.amount ?? 0,
     expenses: Math.abs(totalExpenses._sum.amount ?? 0),
-    count: transactionCount,
+    count,
   };
 }
