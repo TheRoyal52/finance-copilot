@@ -41,7 +41,6 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { embedText, buildTransactionText, toVectorLiteral } from "@/lib/ai/embed";
-import { Prisma } from "@/app/generated/prisma";
 
 // ── Add Transaction ────────────────────────────────────────
 // Called from AddTransactionDrawer when the form is submitted
@@ -134,8 +133,11 @@ export async function addTransaction(
       embedText(text)
         .then((embedding) => {
           const vector = toVectorLiteral(embedding);
-          return prisma.$executeRaw(
-            Prisma.sql`UPDATE "Transaction" SET embedding = ${vector}::vector WHERE id = ${transaction.id}`
+          // $executeRawUnsafe needed — Prisma.sql breaks the ::vector cast
+          return prisma.$executeRawUnsafe(
+            `UPDATE "Transaction" SET embedding = $1::vector WHERE id = $2`,
+            vector,
+            transaction.id
           );
         })
         .catch((err) => console.warn("Embedding failed for", transaction.id, err));

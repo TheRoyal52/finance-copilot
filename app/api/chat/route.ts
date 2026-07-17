@@ -105,15 +105,19 @@ ${transactionContext}
 Be like a sharp CA friend — honest, specific, no fluff.`;
 
   // ── Step 7: Stream from Gemini ────────────────────────────
-  const result = await streamText({
+  // IMPORTANT: streamText() is NOT async in AI SDK v4 — do NOT await it.
+  // Awaiting it would buffer the ENTIRE response before sending the first byte,
+  // turning a 200ms first-token into a 20s blank screen.
+  // Without await, it returns a StreamTextResult immediately and the
+  // toDataStreamResponse() pipes tokens to the client as they're generated.
+  const result = streamText({
     model: google("gemini-2.0-flash"),
     system: systemPrompt,
     messages,
-    temperature: 0.3, // low = factual, not creative (good for finance)
+    temperature: 0.3,
     maxTokens: 500,
   });
 
-  // toDataStreamResponse() = AI SDK v4 method
-  // Converts the stream to SSE format that useChat() on the client reads
+  // SSE stream — useChat() on the client reads token-by-token
   return result.toDataStreamResponse();
 }

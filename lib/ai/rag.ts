@@ -121,12 +121,16 @@ export async function backfillEmbeddings(userId: string): Promise<{
       const embedding = await embedText(text);
       const vector    = toVectorLiteral(embedding);
 
-      await prisma.$executeRaw(
-        Prisma.sql`
-          UPDATE "Transaction"
-          SET embedding = ${vector}::vector
-          WHERE id = ${tx.id}
-        `
+      // WHY $executeRawUnsafe?
+      // Prisma.sql`` parameterizes the vector string as a 'text' type,
+      // which breaks the ::vector cast silently (the UPDATE runs but stores NULL).
+      // $executeRawUnsafe lets us pass the vector literal as a plain string
+      // in the SQL, where Postgres correctly casts it to vector(768).
+      // This is one of the few valid use-cases for raw unsafe SQL in Prisma.
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Transaction" SET embedding = $1::vector WHERE id = $2`,
+        vector,  // "[0.1, 0.2, ...]" — pgvector text literal format
+        tx.id
       );
     })
   );
