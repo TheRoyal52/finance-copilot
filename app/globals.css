@@ -1886,3 +1886,212 @@ details[open] .settings-qa-q {
   color: var(--brass);
   font-size: 0.75rem;
 }
+
+/* ================================================================
+   AUTH PAGES (Sign In / Sign Up)
+   ================================================================ */
+.auth-page {
+  display: flex;
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+/* ── Left brand panel ─────────────────────────────────────── */
+.auth-brand {
+  flex: 0 0 52%;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10) var(--space-10);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle texture */
+.auth-brand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 40px,
+    rgba(255,255,255,0.015) 40px,
+    rgba(255,255,255,0.015) 41px
+  );
+}
+
+.auth-brand-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: 440px;
+  width: 100%;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.auth-logo-mark {
+  font-size: 1.5rem;
+  color: var(--brass);
+}
+
+.auth-logo-name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: rgba(255,255,255,0.95);
+  letter-spacing: 0.02em;
+}
+
+.auth-headline-text {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 4vw, 3rem);
+  color: rgba(255,255,255,0.95);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-4);
+}
+
+.auth-subtext {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+/* ── Feature list ─────────────────────────────────────────── */
+.auth-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.auth-feature-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  color: rgba(255,255,255,0.65);
+  font-size: 0.9rem;
+}
+
+.auth-feature-icon { color: var(--brass); font-size: 0.7rem; }
+
+/* ── Decorative ledger preview ──────────────────────────────── */
+.auth-ledger-preview {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.03);
+}
+
+.auth-ledger-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.8125rem;
+}
+
+.auth-ledger-row:last-child { border-bottom: none; }
+
+.auth-ledger-row--ai {
+  background: rgba(176,141,87,0.08);
+  border-left: 2px solid var(--brass);
+}
+
+.auth-ledger-time {
+  color: rgba(255,255,255,0.3);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.auth-ledger-desc {
+  flex: 1;
+  color: rgba(255,255,255,0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-ledger-row--ai .auth-ledger-desc { color: rgba(176,141,87,0.9); }
+.auth-ledger-amount { flex-shrink: 0; font-size: 0.8125rem; }
+
+/* ── Right form panel ─────────────────────────────────────── */
+.auth-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10) var(--space-8);
+}
+
+.auth-form-inner {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.auth-welcome {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ── Clerk widget overrides ─────────────────────────────────── */
+.clerk-root,
+.clerk-card {
+  box-shadow: none !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+.clerk-field-input {
+  border: 1px solid var(--hairline) !important;
+  background: var(--paper-subtle) !important;
+  border-radius: 4px !important;
+  font-family: var(--font-body) !important;
+  color: var(--ink) !important;
+  font-size: 0.9375rem !important;
+  transition: border-color 150ms ease !important;
+}
+
+.clerk-field-input:focus {
+  border-color: var(--brass) !important;
+  box-shadow: 0 0 0 3px rgba(176,141,87,0.1) !important;
+}
+
+.clerk-submit-btn {
+  background: var(--ink) !important;
+  color: var(--paper) !important;
+  border-radius: 4px !important;
+  font-family: var(--font-body) !important;
+  font-weight: 500 !important;
+  transition: background 150ms ease !important;
+  width: 100% !important;
+}
+
+.clerk-submit-btn:hover { background: var(--brass) !important; }
+.clerk-social-btn {
+  border: 1px solid var(--hairline) !important;
+  border-radius: 4px !important;
+  font-family: var(--font-body) !important;
+}
+
+/* ── Responsive: stack on small screens ────────────────────── */
+@media (max-width: 768px) {
+  .auth-brand { display: none; }
+  .auth-form-panel { padding: var(--space-8) var(--space-5); }
+}

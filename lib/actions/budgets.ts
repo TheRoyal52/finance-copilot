@@ -1,5 +1,5 @@
 "use server";
-// lib/actions/budgets.ts — Server Actions for budget CRUD
+// lib/actions/budgets.ts — FIXED: month stored as DateTime (first day of month)
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -13,40 +13,31 @@ async function getDemoUserId(): Promise<string> {
   return user.id;
 }
 
-function getCurrentMonth(): string {
+function getFirstDayOfCurrentMonth(): Date {
   const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  // Month is 0-indexed: getMonth() returns 6 for July
+  // new Date(2026, 6, 1) = 2026-07-01
+  return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
-// ── Create or Update Budget ────────────────────────────────
-// "Upsert" = update if exists, insert if not
-// Prisma supports this natively with upsert()
-// WHY UPSERT instead of separate create/update?
-// A user might click "Set Budget" for Food multiple times.
-// Instead of throwing an error ("budget already exists"),
-// we just update the limit. One action covers both cases.
-export async function upsertBudget(
-  formData: FormData
-): Promise<{ error?: string }> {
-  const categoryId  = formData.get("categoryId") as string;
-  const rawLimit    = formData.get("limit") as string;
-  const month       = (formData.get("month") as string) || getCurrentMonth();
+export async function upsertBudget(formData: FormData): Promise<{ error?: string }> {
+  const categoryId = formData.get("categoryId") as string;
+  const rawLimit   = formData.get("limit") as string;
 
-  if (!categoryId || !rawLimit) {
-    return { error: "Category and limit are required." };
-  }
+  if (!categoryId || !rawLimit) return { error: "Category and limit are required." };
 
   const limit = parseFloat(rawLimit);
-  if (isNaN(limit) || limit <= 0) {
-    return { error: "Limit must be a positive number." };
-  }
+  if (isNaN(limit) || limit <= 0) return { error: "Limit must be a positive number." };
 
-  const userId = await getDemoUserId();
+  const userId   = await getDemoUserId();
+  // Always budget for CURRENT month — store as first day DateTime
+  const month    = getFirstDayOfCurrentMonth();
 
   try {
+    // UPSERT: create if not exists, update limit if already set for this month
+    // The unique constraint is: userId + categoryId + month (all three together)
     await prisma.budget.upsert({
       where: {
-        // Unique constraint: one budget per user per category per month
         userId_categoryId_month: { userId, categoryId, month },
       },
       update: { monthlyLimit: limit },
@@ -62,23 +53,13 @@ export async function upsertBudget(
   }
 }
 
-// ── Delete Budget ──────────────────────────────────────────
-export async function deleteBudget(
-  id: string
-): Promise<{ error?: string }> {
+export async function deleteBudget(id: string): Promise<{ error?: string }> {
   if (!id) return { error: "Budget ID required." };
-
   const userId = await getDemoUserId();
 
   try {
-    // Authorization check first — ensure this budget belongs to this user
-    const budget = await prisma.budget.findFirst({
-      where: { id, userId },
-    });
-
-    if (!budget) {
-      return { error: "Budget not found or access denied." };
-    }
+    const budget = await prisma.budget.findFirst({ where: { id, userId } });
+    if (!budget) return { error: "Budget not found or access denied." };
 
     await prisma.budget.delete({ where: { id } });
     revalidatePath("/budgets");

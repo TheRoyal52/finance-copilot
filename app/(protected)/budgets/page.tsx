@@ -4,6 +4,7 @@ import {
   getBudgetsWithSpending,
   getBudgetSummary,
   getCategoriesForBudget,
+  getCurrentMonthLabel,
 } from "@/lib/data/budgets";
 import BudgetCard from "@/components/budgets/BudgetCard";
 import AddBudgetForm from "@/components/budgets/AddBudgetForm";
@@ -15,10 +16,6 @@ export const metadata = {
 
 function formatINR(n: number) {
   return "₹" + new Intl.NumberFormat("en-IN").format(Math.round(n));
-}
-
-function getCurrentMonthLabel() {
-  return new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" });
 }
 
 export default async function BudgetsPage() {

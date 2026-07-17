@@ -1,78 +1,64 @@
 "use client";
 // components/transactions/TransactionFilters.tsx
-// ============================================================
-// CLIENT COMPONENT — handles filter state via URL search params
-// ============================================================
-//
-// THE KEY PATTERN: useSearchParams + useRouter
-//
-// Instead of: useState({ category: "", q: "" })
-// We use:     URL = /transactions?category=Food&q=zomato
-//
-// When user types in search box → we update the URL
-// → Next.js re-renders the Server Component page.tsx
-// → page.tsx reads new URL params → fetches new data
-// → New results appear WITHOUT a full page reload
-//
-// This is called "URL as state" — it's more robust than useState
-// because the URL persists across refreshes and can be shared.
-//
-// HOW useTransition WORKS:
-// When we update the URL, Next.js starts fetching new data.
-// During this fetch, the UI could freeze or show a blank state.
-// useTransition marks the update as "non-urgent" — React keeps
-// showing the current UI while the new data loads in background.
-// isPending tells us if a transition is in progress → we show
-// a subtle loading indicator.
-// ============================================================
+// SEARCH DEBOUNCE ADDED: waits 300ms after user stops typing before updating URL
+// WHY DEBOUNCE?
+// Without it: every keystroke = URL update = server re-render = DB query
+// "Netflix" = 7 keystrokes = 7 DB queries, 7 navigations
+// With 300ms debounce: user types "Netflix", pauses → 1 DB query
+// This is a classic performance pattern used in every search UI.
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { useTransition, useCallback } from "react";
+import { useTransition, useCallback, useRef, useState, useEffect } from "react";
 
 interface FilterOption {
   value: string;
   label: string;
 }
 
-interface TransactionFiltersProps {
-  categories: FilterOption[];
-}
-
-export default function TransactionFilters({ categories }: TransactionFiltersProps) {
-  const router = useRouter();
-  const pathname = usePathname();
+export default function TransactionFilters({ categories }: { categories: FilterOption[] }) {
+  const router      = useRouter();
+  const pathname    = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  // Read current filter values from URL
-  const currentQ = searchParams.get("q") ?? "";
-  const currentCategory = searchParams.get("category") ?? "";
-  const currentType = searchParams.get("type") ?? "";
+  // Local state for the search input value (shows instantly while URL update is debounced)
+  const [searchValue, setSearchValue] = useState(searchParams.get("q") ?? "");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Helper: update a single search param, reset page to 1
+  // Sync searchValue if URL changes externally (e.g., "Clear" button)
+  useEffect(() => {
+    setSearchValue(searchParams.get("q") ?? "");
+  }, [searchParams]);
+
+  const currentCategory = searchParams.get("category") ?? "";
+  const currentType     = searchParams.get("type") ?? "";
+
+  // Helper: push URL update (used for dropdowns — instant, no debounce)
   const updateParam = useCallback(
     (key: string, value: string) => {
-      // Build a new URLSearchParams from the current ones
       const params = new URLSearchParams(searchParams.toString());
-
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-
-      // Always reset to page 1 when filters change
-      // (otherwise you might be on page 5 with 0 results)
+      if (value) { params.set(key, value); } else { params.delete(key); }
       params.delete("page");
-
-      // startTransition: marks this navigation as non-urgent
-      // React keeps showing old UI while new data loads
-      startTransition(() => {
-        router.push(`${pathname}?${params.toString()}`);
-      });
+      startTransition(() => { router.push(`${pathname}?${params.toString()}`); });
     },
     [searchParams, pathname, router]
   );
+
+  // Debounced search: update local state immediately, delay URL push by 300ms
+  function handleSearchChange(value: string) {
+    setSearchValue(value); // instant UI update
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) { params.set("q", value); } else { params.delete("q"); }
+      params.delete("page");
+      startTransition(() => { router.push(`${pathname}?${params.toString()}`); });
+    }, 300); // 300ms — sweet spot: responsive but not spammy
+  }
+
+  const isFiltered = searchValue || currentCategory || currentType;
 
   return (
     <div className={`tx-filters ${isPending ? "tx-filters--loading" : ""}`}>
@@ -83,10 +69,10 @@ export default function TransactionFilters({ categories }: TransactionFiltersPro
           type="search"
           id="tx-search"
           placeholder="Search transactions…"
-          defaultValue={currentQ}
+          value={searchValue}
           className="filter-input"
           aria-label="Search transactions by description"
-          onChange={(e) => updateParam("q", e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
         />
         {isPending && (
           <span className="filter-loading" aria-label="Loading results…">○</span>
@@ -103,9 +89,7 @@ export default function TransactionFilters({ categories }: TransactionFiltersPro
       >
         <option value="">All Categories</option>
         {categories.map((cat) => (
-          <option key={cat.value} value={cat.value}>
-            {cat.label}
-          </option>
+          <option key={cat.value} value={cat.value}>{cat.label}</option>
         ))}
       </select>
 
@@ -127,11 +111,12 @@ export default function TransactionFilters({ categories }: TransactionFiltersPro
         ))}
       </div>
 
-      {/* Clear all filters — only show if any filter is active */}
-      {(currentQ || currentCategory || currentType) && (
+      {isFiltered && (
         <button
           className="filter-clear"
           onClick={() => {
+            setSearchValue("");
+            if (debounceRef.current) clearTimeout(debounceRef.current);
             startTransition(() => router.push(pathname));
           }}
           aria-label="Clear all filters"

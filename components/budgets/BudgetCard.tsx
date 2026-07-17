@@ -14,7 +14,7 @@ interface BudgetData {
   percentage: number;
   overBudget: boolean;
   projectedMonthEnd: number;
-  month: string;
+  month: Date;
 }
 
 function formatINR(n: number) {
