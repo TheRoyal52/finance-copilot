@@ -13,15 +13,17 @@
 // ============================================================
 
 import { prisma } from "@/lib/prisma";
+import { cache } from "react";
 
-async function getDemoUserId(): Promise<string> {
+// cache() deduplicates within one request — see lib/data/dashboard.ts for explanation
+const getDemoUserId = cache(async (): Promise<string> => {
   const user = await prisma.user.findFirst({
     where: { email: "test@financecopilot.dev" },
     select: { id: true },
   });
   if (!user) throw new Error("Demo user not found.");
   return user.id;
-}
+});
 
 // Returns the first day of the current month as a Date object
 // e.g. July 2026 → new Date(2026, 6, 1) which is 2026-07-01T00:00:00.000Z

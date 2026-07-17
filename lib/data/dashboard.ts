@@ -23,23 +23,20 @@
 // ============================================================
 
 import { prisma } from "@/lib/prisma";
+import { cache } from "react";
 
-// ── Get or create the demo user ──────────────────────────────
-// For now, we use the seeded demo user. In Sprint 2, we'll
-// replace this with the actual Clerk authenticated user.
-async function getDemoUser() {
+// React cache() deduplicates this call within one server request.
+// Without it: 6 parallel Promise.all functions → 6 SELECT queries to Neon.
+// With cache(): first call fetches, all others return the same promise.
+// This is the Next.js recommended pattern for shared server data.
+// Docs: https://react.dev/reference/react/cache
+const getDemoUser = cache(async () => {
   const user = await prisma.user.findFirst({
     where: { email: "test@financecopilot.dev" },
   });
-  
-  if (!user) {
-    throw new Error(
-      "Demo user not found. Run: npx tsx prisma/seed.ts"
-    );
-  }
-  
+  if (!user) throw new Error("Demo user not found. Run: npx tsx prisma/seed.ts");
   return user;
-}
+});
 
 // ── Current Balance ───────────────────────────────────────────
 // Sum ALL transactions: income (positive) - expenses (negative)

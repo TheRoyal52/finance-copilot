@@ -2,15 +2,16 @@
 // Goal model has: deadline (not targetDate), no description field
 
 import { prisma } from "@/lib/prisma";
+import { cache } from "react";
 
-async function getDemoUserId(): Promise<string> {
+const getDemoUserId = cache(async (): Promise<string> => {
   const user = await prisma.user.findFirst({
     where: { email: "test@financecopilot.dev" },
     select: { id: true },
   });
   if (!user) throw new Error("Demo user not found.");
   return user.id;
-}
+});
 
 export async function getGoals() {
   const userId = await getDemoUserId();
