@@ -1,6 +1,8 @@
 "use client";
 // components/dashboard/LedgerTrail.tsx
-// Client Component — uses useState + useEffect for typing animation
+// Right-side panel — shows a live typewriter demo of AI reasoning.
+// In production this would stream real AI analysis steps.
+// For now: animated demo that showcases the "thinking out loud" UX.
 
 import { useState, useEffect, useRef } from "react";
 
@@ -20,15 +22,15 @@ const DEMO_ENTRIES: LedgerEntry[] = [
   { id: "5", timestamp: "09:41:06", action: "CHECKED",  detail: "budget: Transport (₹3,980/₹3,000) ⚠" },
   {
     id: "6", timestamp: "09:41:07", action: "ANSWER",
-    detail: "Transport is ₹980 over budget this month. Mostly Uber (4 trips) and monthly petrol. Food is within budget — good trend. Savings rate: 22% of income.",
+    detail: "Transport is ₹980 over budget this month. Mostly Uber (4 trips) and monthly petrol. Food is on track — good trend. Savings rate: 22% of income.",
     isAnswer: true,
   },
 ];
 
 export default function LedgerTrail() {
   const [visibleCount, setVisibleCount] = useState(0);
-  const [typedChars, setTypedChars] = useState<Record<string, number>>({});
-  const mountedRef = useRef(true);
+  const [typedChars, setTypedChars]     = useState<Record<string, number>>({});
+  const mountedRef                      = useRef(true);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -37,9 +39,9 @@ export default function LedgerTrail() {
       if (!mountedRef.current || index >= DEMO_ENTRIES.length) return;
       setVisibleCount(index + 1);
 
-      const entry = DEMO_ENTRIES[index];
+      const entry    = DEMO_ENTRIES[index];
       const fullText = `${entry.action}  ${entry.detail}`;
-      let charIndex = 0;
+      let charIndex  = 0;
 
       const typeInterval = setInterval(() => {
         if (!mountedRef.current) { clearInterval(typeInterval); return; }
@@ -71,9 +73,9 @@ export default function LedgerTrail() {
       <div className="trail-entries" aria-live="polite">
         {DEMO_ENTRIES.slice(0, visibleCount).map((entry) => {
           const fullText = `${entry.action}  ${entry.detail}`;
-          const chars = typedChars[entry.id] ?? 0;
-          const typed = fullText.slice(0, chars);
-          const done = chars >= fullText.length;
+          const chars    = typedChars[entry.id] ?? 0;
+          const typed    = fullText.slice(0, chars);
+          const done     = chars >= fullText.length;
 
           if (entry.isAnswer) {
             return (
@@ -105,7 +107,12 @@ export default function LedgerTrail() {
       </div>
 
       <div className="trail-footer">
-        <p className="trail-footer-hint">AI copilot active in Sprint 3 ›</p>
+        {/* Sprint 3 done — point users to the real AI copilot */}
+        <p className="trail-footer-hint">
+          Ask Finpilot anything — click{" "}
+          <span style={{ color: "var(--brass)", fontWeight: 600 }}>⬡</span>
+          {" "}bottom-right
+        </p>
       </div>
     </aside>
   );
