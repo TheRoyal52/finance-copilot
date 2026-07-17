@@ -1,7 +1,9 @@
-// app/dashboard/layout.tsx
-// Three-panel shell — Server Component (no data, just structure)
+// app/(protected)/layout.tsx — Three-panel shell
+// CopilotPanel is a Client Component (uses useChat hook)
+// It renders as a floating button on every protected page
 import Sidebar from "@/components/Sidebar";
 import LedgerTrail from "@/components/dashboard/LedgerTrail";
+import CopilotPanel from "@/components/copilot/CopilotPanel";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +15,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </main>
       <LedgerTrail />
+
+      {/* Finpilot AI — floating on every protected page */}
+      <CopilotPanel />
     </div>
   );
 }

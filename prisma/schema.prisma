@@ -8,13 +8,14 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../app/generated/prisma"  // generated TypeScript client goes here
+  output   = "../app/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  // NOTE: In Prisma v7, the database URL is configured in prisma.config.ts
-  // NOT here in schema.prisma — this is a breaking change from Prisma v5/v6
+  provider   = "postgresql"
+  extensions = [vector]  // pgvector — needed for embedding similarity search
+  // URL configured in prisma.config.ts (Prisma v7 breaking change)
 }
 
 // ============================================================
@@ -77,8 +78,17 @@ model Transaction {
   userId      String
   categoryId  String
 
-  // We'll add the embedding vector column in Phase 3 (pgvector)
-  // embedding  Unsupported("vector(1536)")?  ← uncomment in Day 7
+  // ── RAG / Semantic Search (Sprint 3) ────────────────────────
+  // An embedding is a list of 1536 floats that represents the
+  // "meaning" of the transaction description in vector space.
+  // Transactions with similar meanings cluster together.
+  // e.g. "Zomato order" and "Swiggy delivery" will be very close;
+  // "Netflix subscription" and "rent payment" will be far apart.
+  //
+  // We use Unsupported() because Prisma doesn't have a native
+  // vector type — pgvector adds it to PostgreSQL.
+  // Gemini text-embedding-004 produces 768-dim vectors.
+  embedding  Unsupported("vector(768)")?  // null until embedded
 
   // Relations
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
