@@ -159,13 +159,15 @@ export async function getCategoryBreakdown() {
 }
 
 // ── Budget Status (this month) ─────────────────────────────── 
-// How much of each budget has been used
+// How much of each budget has been used — used by CategoryBars on dashboard
 export async function getBudgetStatus() {
   const user = await getDemoUser();
   
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
+
+  const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59, 999);
   
   const budgets = await prisma.budget.findMany({
     where: {
@@ -173,42 +175,42 @@ export async function getBudgetStatus() {
       month: { gte: monthStart },
     },
     include: {
-      category: {
-        select: { name: true },
-      },
+      category: { select: { name: true } },
     },
   });
+
+  if (budgets.length === 0) return [];
+
+  // N+1 FIX: single GROUP BY instead of one aggregate per budget
+  const categoryIds = budgets.map((b) => b.categoryId);
+
+  const spendingRows = await prisma.$queryRaw<{ categoryId: string; spent: number }[]>`
+    SELECT "categoryId", ABS(SUM("amount")) AS spent
+    FROM "Transaction"
+    WHERE "userId" = ${user.id}
+      AND "categoryId" = ANY(${categoryIds}::text[])
+      AND "date" >= ${monthStart}
+      AND "date" <= ${monthEnd}
+      AND "amount" < 0
+    GROUP BY "categoryId"
+  `;
+
+  const spendingMap = new Map(spendingRows.map((r) => [r.categoryId, Number(r.spent)]));
   
-  // For each budget, calculate how much has been spent
-  const budgetStatus = await Promise.all(
-    budgets.map(async (budget) => {
-      const spent = await prisma.transaction.aggregate({
-        where: {
-          userId: user.id,
-          categoryId: budget.categoryId,
-          date: { gte: monthStart },
-          amount: { lt: 0 },
-        },
-        _sum: { amount: true },
-      });
-      
-      const spentAmount = Math.abs(spent._sum.amount ?? 0);
-      
-      return {
-        category: budget.category.name,
-        limit: budget.monthlyLimit,
-        spent: spentAmount,
-        remaining: budget.monthlyLimit - spentAmount,
-        percentage: Math.min(
-          Math.round((spentAmount / budget.monthlyLimit) * 100),
-          100
-        ),
-        overBudget: spentAmount > budget.monthlyLimit,
-      };
-    })
-  );
-  
-  return budgetStatus;
+  return budgets.map((budget) => {
+    const spentAmount = spendingMap.get(budget.categoryId) ?? 0;
+    return {
+      category: budget.category.name,
+      limit: budget.monthlyLimit,
+      spent: spentAmount,
+      remaining: budget.monthlyLimit - spentAmount,
+      percentage: Math.min(
+        Math.round((spentAmount / budget.monthlyLimit) * 100),
+        100
+      ),
+      overBudget: spentAmount > budget.monthlyLimit,
+    };
+  });
 }
 
 // ── Recent Transactions ───────────────────────────────────────

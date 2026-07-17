@@ -9,7 +9,7 @@ import CategoryBars from "@/components/dashboard/CategoryBars";
 import TransactionTable from "@/components/dashboard/TransactionTable";
 
 export const metadata = {
-  title: "Dashboard — Finance Copilot",
+  title: "Dashboard — Finpilot",
   description: "Your financial overview, powered by AI.",
 };
 
