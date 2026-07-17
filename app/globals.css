@@ -2095,3 +2095,100 @@ details[open] .settings-qa-q {
   .auth-brand { display: none; }
   .auth-form-panel { padding: var(--space-8) var(--space-5); }
 }
+
+/* ================================================================
+   SETTINGS PAGE — PROFILE + DATA SECTIONS
+   ================================================================ */
+.settings-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  background: var(--paper-subtle);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+}
+
+.settings-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid var(--hairline);
+}
+
+.settings-avatar-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.settings-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.settings-profile-name {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.settings-profile-email { font-size: 0.875rem; }
+.settings-profile-joined { font-size: 0.6875rem; }
+
+.settings-managed-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: rgba(176, 141, 87, 0.05);
+  border: 1px solid rgba(176, 141, 87, 0.15);
+  border-radius: 4px;
+}
+
+.settings-managed-icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+
+.settings-managed-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: var(--space-1);
+}
+
+.settings-ext-link {
+  color: var(--brass);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(176, 141, 87, 0.3);
+  transition: border-color var(--transition-fast);
+}
+.settings-ext-link:hover { border-color: var(--brass); }
+
+/* ── Data row ─────────────────────────────────────────────── */
+.settings-data-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.settings-data-item {
+  padding: var(--space-4);
+  background: var(--paper-subtle);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+}
+
+.settings-data-val {
+  font-size: 0.8125rem;
+  color: var(--ink);
+}
