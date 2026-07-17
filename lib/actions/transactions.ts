@@ -40,6 +40,8 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { embedText, buildTransactionText, toVectorLiteral } from "@/lib/ai/embed";
+import { Prisma } from "@/app/generated/prisma";
 
 // ── Add Transaction ────────────────────────────────────────
 // Called from AddTransactionDrawer when the form is submitted
@@ -120,12 +122,28 @@ export async function addTransaction(
       },
     });
 
-    // --- Step 6: Revalidate the transactions page ---
-    // Without this, Next.js would serve the CACHED version of the page
-    // with stale data. revalidatePath tells Next.js:
-    // "the data at this URL has changed, re-fetch it on next request"
+    // --- Step 6: Auto-embed the new transaction for RAG (fire-and-forget) ---
+    // We don't await this — embedding is non-critical.
+    // If Gemini is down or the key is missing, the transaction is still saved.
+    // The backfill route can embed it later.
+    // "Fire-and-forget" pattern: start the async work, don't block the response.
+    if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "your_gemini_api_key_here") {
+      // Fetch category name for richer embedding context
+      const cat = await prisma.category.findUnique({ where: { id: categoryId }, select: { name: true } });
+      const text   = buildTransactionText(description.trim(), cat?.name ?? "Unknown", signedAmount);
+      embedText(text)
+        .then((embedding) => {
+          const vector = toVectorLiteral(embedding);
+          return prisma.$executeRaw(
+            Prisma.sql`UPDATE "Transaction" SET embedding = ${vector}::vector WHERE id = ${transaction.id}`
+          );
+        })
+        .catch((err) => console.warn("Embedding failed for", transaction.id, err));
+    }
+
+    // --- Step 7: Revalidate pages ---
     revalidatePath("/transactions");
-    revalidatePath("/dashboard");  // dashboard totals also change
+    revalidatePath("/dashboard");
 
     return { id: transaction.id };
 
