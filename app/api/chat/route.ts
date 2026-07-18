@@ -111,7 +111,7 @@ Be like a sharp CA friend — honest, specific, no fluff.`;
   // Without await, it returns a StreamTextResult immediately and the
   // toDataStreamResponse() pipes tokens to the client as they're generated.
   const result = streamText({
-    model: google("gemini-2.0-flash"),
+    model: google("gemini-3.5-flash"),
     system: systemPrompt,
     messages,
     temperature: 0.3,
