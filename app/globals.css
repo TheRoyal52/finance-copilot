@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    FINANCE COPILOT — GLOBAL DESIGN SYSTEM
    ============================================================
    All component styles live here so Server Components don't
@@ -1888,38 +1888,51 @@ details[open] .settings-qa-q {
 }
 
 /* ================================================================
-   AUTH PAGES (Sign In / Sign Up)
+   AUTH / LOGIN PAGE
+   ================================================================
+   Two-panel layout:
+   LEFT  — dark brand panel with animated ledger preview
+   RIGHT — Clerk sign-in widget with custom styling
    ================================================================ */
+
 .auth-page {
   display: flex;
   min-height: 100vh;
   background: var(--paper);
 }
 
-/* ── Left brand panel ─────────────────────────────────────── */
+/* Left brand panel */
 .auth-brand {
-  flex: 0 0 52%;
+  flex: 0 0 50%;
   background: var(--ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-10) var(--space-10);
+  padding: 60px 64px;
   position: relative;
   overflow: hidden;
 }
 
-/* Subtle texture */
 .auth-brand::before {
   content: "";
   position: absolute;
   inset: 0;
   background: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 40px,
-    rgba(255,255,255,0.015) 40px,
-    rgba(255,255,255,0.015) 41px
+    -45deg,
+    transparent, transparent 60px,
+    rgba(255,255,255,0.012) 60px,
+    rgba(255,255,255,0.012) 61px
   );
+  pointer-events: none;
+}
+
+.auth-brand::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 200px;
+  background: linear-gradient(to top, rgba(176,141,87,0.06) 0%, transparent 100%);
+  pointer-events: none;
 }
 
 .auth-brand-content {
@@ -1927,7 +1940,7 @@ details[open] .settings-qa-q {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: 40px;
   max-width: 440px;
   width: 100%;
 }
@@ -1935,58 +1948,65 @@ details[open] .settings-qa-q {
 .auth-logo {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 12px;
 }
 
 .auth-logo-mark {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   color: var(--brass);
+  text-shadow: 0 0 20px rgba(176,141,87,0.4);
 }
 
 .auth-logo-name {
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: 1.375rem;
   color: rgba(255,255,255,0.95);
   letter-spacing: 0.02em;
+  font-weight: 300;
 }
 
 .auth-headline-text {
   font-family: var(--font-display);
-  font-size: clamp(2.25rem, 4vw, 3rem);
-  color: rgba(255,255,255,0.95);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin-bottom: var(--space-4);
+  font-size: clamp(2.5rem, 4vw, 3.25rem);
+  color: rgba(255,255,255,0.97);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  font-weight: 300;
+  font-style: italic;
+  margin-bottom: 16px;
 }
 
 .auth-subtext {
-  color: rgba(255,255,255,0.5);
-  font-size: 0.9375rem;
-  line-height: 1.7;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.9rem;
+  line-height: 1.75;
+  max-width: 380px;
 }
 
-/* ── Feature list ─────────────────────────────────────────── */
 .auth-features {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 10px;
 }
 
 .auth-feature-item {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-  color: rgba(255,255,255,0.65);
-  font-size: 0.9rem;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.55);
+  font-size: 0.875rem;
 }
 
-.auth-feature-icon { color: var(--brass); font-size: 0.7rem; }
+.auth-feature-icon {
+  color: var(--brass);
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
 
-/* ── Decorative ledger preview ──────────────────────────────── */
 .auth-ledger-preview {
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
   background: rgba(255,255,255,0.03);
 }
@@ -1994,8 +2014,8 @@ details[open] .settings-qa-q {
 .auth-ledger-row {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  gap: 12px;
+  padding: 11px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.05);
   font-size: 0.8125rem;
 }
@@ -2003,34 +2023,39 @@ details[open] .settings-qa-q {
 .auth-ledger-row:last-child { border-bottom: none; }
 
 .auth-ledger-row--ai {
-  background: rgba(176,141,87,0.08);
+  background: rgba(176,141,87,0.07);
   border-left: 2px solid var(--brass);
+  padding-left: 14px;
 }
 
 .auth-ledger-time {
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.28);
   font-size: 0.75rem;
   flex-shrink: 0;
+  min-width: 42px;
 }
 
 .auth-ledger-desc {
   flex: 1;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.58);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.auth-ledger-row--ai .auth-ledger-desc { color: rgba(176,141,87,0.9); }
-.auth-ledger-amount { flex-shrink: 0; font-size: 0.8125rem; }
+.auth-ledger-row--ai .auth-ledger-desc { color: rgba(176,141,87,0.85); font-style: italic; }
+.auth-ledger-amount { flex-shrink: 0; font-size: 0.8125rem; font-weight: 500; }
+.auth-ledger-amount.gain { color: var(--gain); }
+.auth-ledger-amount.loss { color: #c97772; }
 
-/* ── Right form panel ─────────────────────────────────────── */
+/* Right form panel */
 .auth-form-panel {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-10) var(--space-8);
+  padding: 60px 48px;
+  background: var(--paper);
 }
 
 .auth-form-inner {
@@ -2038,63 +2063,103 @@ details[open] .settings-qa-q {
   max-width: 400px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: 24px;
 }
 
 .auth-welcome {
-  font-size: 0.75rem;
-  color: var(--ink-muted);
+  font-size: 0.7rem;
+  color: var(--brass);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
+  font-weight: 600;
 }
 
-/* ── Clerk widget overrides ─────────────────────────────────── */
-.clerk-root,
-.clerk-card {
+/* Clerk widget overrides — using .cl- classes for better targeting */
+.clerk-root { width: 100% !important; }
+.clerk-card,
+.cl-card,
+.cl-rootBox {
   box-shadow: none !important;
   background: transparent !important;
   border: none !important;
   padding: 0 !important;
   width: 100% !important;
+  max-width: 100% !important;
 }
 
+.cl-headerTitle,
+.cl-headerSubtitle,
+.cl-header { display: none !important; }
+
+.cl-formFieldInput,
 .clerk-field-input {
   border: 1px solid var(--hairline) !important;
   background: var(--paper-subtle) !important;
-  border-radius: 4px !important;
+  border-radius: 5px !important;
   font-family: var(--font-body) !important;
   color: var(--ink) !important;
   font-size: 0.9375rem !important;
-  transition: border-color 150ms ease !important;
+  height: 42px !important;
+  padding: 0 14px !important;
+  transition: border-color 150ms ease, box-shadow 150ms ease !important;
 }
 
+.cl-formFieldInput:focus,
 .clerk-field-input:focus {
   border-color: var(--brass) !important;
-  box-shadow: 0 0 0 3px rgba(176,141,87,0.1) !important;
+  box-shadow: 0 0 0 3px rgba(176,141,87,0.12) !important;
+  outline: none !important;
 }
 
+.cl-formButtonPrimary,
 .clerk-submit-btn {
   background: var(--ink) !important;
   color: var(--paper) !important;
-  border-radius: 4px !important;
+  border-radius: 5px !important;
   font-family: var(--font-body) !important;
   font-weight: 500 !important;
-  transition: background 150ms ease !important;
+  font-size: 0.9375rem !important;
+  height: 42px !important;
   width: 100% !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: background 150ms ease, transform 100ms ease !important;
 }
 
-.clerk-submit-btn:hover { background: var(--brass) !important; }
+.cl-formButtonPrimary:hover,
+.clerk-submit-btn:hover {
+  background: var(--brass) !important;
+  transform: translateY(-1px) !important;
+}
+
+.cl-socialButtonsBlockButton,
 .clerk-social-btn {
   border: 1px solid var(--hairline) !important;
-  border-radius: 4px !important;
+  border-radius: 5px !important;
   font-family: var(--font-body) !important;
+  background: var(--paper) !important;
+  height: 42px !important;
+  font-size: 0.875rem !important;
+  transition: border-color 150ms, background 150ms !important;
 }
 
-/* ── Responsive: stack on small screens ────────────────────── */
-@media (max-width: 768px) {
-  .auth-brand { display: none; }
-  .auth-form-panel { padding: var(--space-8) var(--space-5); }
+.cl-socialButtonsBlockButton:hover,
+.clerk-social-btn:hover {
+  border-color: var(--brass) !important;
+  background: var(--paper-subtle) !important;
 }
+
+.cl-dividerLine { background: var(--hairline) !important; }
+.cl-dividerText { color: var(--ink-muted) !important; font-size: 0.8125rem !important; }
+.cl-footerActionLink { color: var(--brass) !important; font-weight: 500 !important; }
+.cl-footerActionText { color: var(--ink-muted) !important; }
+.cl-formFieldLabel { color: var(--ink) !important; font-size: 0.875rem !important; font-weight: 500 !important; }
+
+@media (max-width: 840px) {
+  .auth-brand { display: none; }
+  .auth-form-panel { padding: 48px 24px; }
+}
+
 
 /* ================================================================
    SETTINGS PAGE — PROFILE + DATA SECTIONS
