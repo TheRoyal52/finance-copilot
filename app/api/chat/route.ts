@@ -115,7 +115,6 @@ Be like a sharp CA friend — honest, specific, no fluff.`;
     system: systemPrompt,
     messages,
     temperature: 0.3,
-    maxTokens: 500,
   });
 
   // SSE stream — useChat() on the client reads token-by-token
