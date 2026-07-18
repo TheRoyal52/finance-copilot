@@ -4,21 +4,11 @@
 // ============================================================
 // Hit GET /api/backfill to embed every transaction that doesn't
 // have a vector yet. Safe to run multiple times (skips already-embedded).
-//
-// WHY A SEPARATE ROUTE?
-// Embedding is expensive (~50ms per transaction, API call to Gemini).
-// We don't do it at seed time because the Gemini API key might not
-// be set up yet. This route lets you trigger it manually once ready.
-//
-// PROMISE.ALLSETTLED vs PROMISE.ALL (your earlier point):
-// We use allSettled so one failed embedding doesn't abort the rest.
-// If Gemini rate-limits on transaction 47, transactions 1-46 and
-// 48-100 still get embedded. With Promise.all, everything fails.
 // ============================================================
 
 import { auth } from "@clerk/nextjs/server";
-import { backfillEmbeddings } from "@/lib/ai/rag";
 import { prisma } from "@/lib/prisma";
+import { embedText, buildTransactionText, toVectorLiteral } from "@/lib/ai/embed";
 
 export async function GET() {
   // Protect the route — must be authenticated
@@ -27,14 +17,34 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Make sure GEMINI_API_KEY is set
-  if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "your_gemini_api_key_here") {
+  // Step 1: Validate API key exists
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey === "your_gemini_api_key_here" || apiKey.trim() === "") {
     return Response.json(
-      { error: "GEMINI_API_KEY not set. Add it to your .env file." },
+      {
+        error: "GEMINI_API_KEY not set.",
+        fix: "1. Get key from https://aistudio.google.com/apikey  2. Add GEMINI_API_KEY=AIza... to your .env file  3. Restart the dev server  4. Hit this route again"
+      },
       { status: 500 }
     );
   }
 
+  // Step 2: Test the key with a single embedding call BEFORE processing all transactions
+  try {
+    await embedText("test connection");
+  } catch (testErr: unknown) {
+    const msg = testErr instanceof Error ? testErr.message : String(testErr);
+    return Response.json(
+      {
+        error: "Gemini API key validation failed.",
+        details: msg,
+        fix: "Check your GEMINI_API_KEY in .env — it should start with 'AIza'"
+      },
+      { status: 500 }
+    );
+  }
+
+  // Step 3: Get demo user
   const user = await prisma.user.findFirst({
     where: { email: "test@financecopilot.dev" },
     select: { id: true },
@@ -44,25 +54,57 @@ export async function GET() {
     return Response.json({ error: "Demo user not found" }, { status: 404 });
   }
 
-  // Count how many need embedding before starting
-  const pendingCount = await prisma.$queryRaw<{ count: bigint }[]>`
-    SELECT COUNT(*)::int as count FROM "Transaction"
-    WHERE "userId" = ${user.id} AND embedding IS NULL
+  // Step 4: Get transactions needing embeddings
+  const transactions = await prisma.$queryRaw<
+    { id: string; description: string; amount: number; categoryName: string }[]
+  >`
+    SELECT t.id, t.description, t.amount, c.name AS "categoryName"
+    FROM "Transaction" t
+    JOIN "Category" c ON t."categoryId" = c.id
+    WHERE t."userId" = ${user.id}
+      AND t.embedding IS NULL
   `;
 
-  const total = Number(pendingCount[0]?.count ?? 0);
-
-  if (total === 0) {
-    return Response.json({ message: "All transactions already have embeddings!", success: 0, failed: 0 });
+  if (transactions.length === 0) {
+    return Response.json({
+      message: "All transactions already have embeddings! The AI copilot is ready.",
+      success: 0,
+      failed: 0,
+      tip: "Click the ⬡ button on any page to chat with Finpilot."
+    });
   }
 
-  // Run the backfill — may take 30-60 seconds for large datasets
-  const { success, failed } = await backfillEmbeddings(user.id);
+  // Step 5: Embed and save — one at a time to avoid rate limits
+  // Promise.allSettled = all run even if some fail; we log each error
+  let success = 0;
+  const errors: string[] = [];
+
+  for (const tx of transactions) {
+    try {
+      const text      = buildTransactionText(tx.description, tx.categoryName, tx.amount);
+      const embedding = await embedText(text);
+      const vector    = toVectorLiteral(embedding);
+
+      // $executeRawUnsafe needed — Prisma.sql breaks ::vector cast
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Transaction" SET embedding = $1::vector WHERE id = $2`,
+        vector,
+        tx.id
+      );
+      success++;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      errors.push(`[${tx.id}] ${tx.description}: ${msg}`);
+    }
+  }
 
   return Response.json({
-    message: `Backfill complete. ${success} embedded, ${failed} failed.`,
-    total,
+    message: `Backfill complete. ${success} embedded, ${errors.length} failed.`,
+    total: transactions.length,
     success,
-    failed,
+    failed: errors.length,
+    // Show first 3 errors to help debug
+    errors: errors.slice(0, 3),
+    tip: success > 0 ? "Click the ⬡ button to chat with Finpilot!" : "Check the errors array above to diagnose failures."
   });
 }
