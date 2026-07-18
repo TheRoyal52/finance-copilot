@@ -25,14 +25,18 @@
 // ============================================================
 
 import { embed } from "ai";
-import { google } from "@ai-sdk/google";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
-// The model used for ALL embeddings (query + transactions must use the same model)
-// text-embedding-004: 768-dimensional, best quality, available via v1 endpoint
-const embeddingModel = google.textEmbeddingModel("text-embedding-004");
+// IMPORTANT: @ai-sdk/google's default `google` export reads GOOGLE_GENERATIVE_AI_API_KEY.
+// Our env var is GEMINI_API_KEY, so we must create a custom instance with the key.
+// This matches what /api/chat/route.ts already does for chat.
+const googleAI = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY!,
+});
 
-// Generate a single embedding vector for a piece of text
-// Returns: number[] of length 768
+// text-embedding-004: 768-dimensional, available on v1 endpoint (not v1beta)
+const embeddingModel = googleAI.textEmbeddingModel("text-embedding-004");
+
 export async function embedText(text: string): Promise<number[]> {
   const { embedding } = await embed({
     model: embeddingModel,
