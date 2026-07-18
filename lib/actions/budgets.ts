@@ -1,7 +1,7 @@
 "use server";
 // lib/actions/budgets.ts — FIXED: month stored as DateTime (first day of month)
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 async function getDemoUserId(): Promise<string> {
@@ -44,6 +44,8 @@ export async function upsertBudget(formData: FormData): Promise<{ error?: string
       create: { userId, categoryId, month, monthlyLimit: limit },
     });
 
+    revalidateTag("budgets-data", "max");
+    revalidateTag("dashboard-data", "max");
     revalidatePath("/budgets");
     revalidatePath("/dashboard");
     return {};
@@ -62,6 +64,8 @@ export async function deleteBudget(id: string): Promise<{ error?: string }> {
     if (!budget) return { error: "Budget not found or access denied." };
 
     await prisma.budget.delete({ where: { id } });
+    revalidateTag("budgets-data", "max");
+    revalidateTag("dashboard-data", "max");
     revalidatePath("/budgets");
     revalidatePath("/dashboard");
     return {};

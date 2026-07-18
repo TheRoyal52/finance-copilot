@@ -5,6 +5,7 @@
 // The token is verified locally — no network round-trip to Clerk's servers on every request.
 
 import { currentUser } from "@clerk/nextjs/server";
+import ClerkProfileModal from "@/components/settings/ClerkProfileModal";
 
 export const metadata = {
   title: "Settings — Finpilot",
@@ -12,12 +13,12 @@ export const metadata = {
 };
 
 const TECH_STACK = [
-  { layer: "Framework",  choice: "Next.js 15 (App Router)",    reason: "Server Components, Server Actions, streaming — no API boilerplate" },
+  { layer: "Framework",  choice: "Next.js 16 (App Router)",    reason: "Server Components, Server Actions, streaming — no API boilerplate" },
   { layer: "Database",   choice: "PostgreSQL via Neon",         reason: "Relational + pgvector for RAG — same DB, no extra service" },
   { layer: "ORM",        choice: "Prisma",                      reason: "Type-safe queries, schema-as-code, auto migrations" },
   { layer: "Auth",       choice: "Clerk",                       reason: "JWT + session, OAuth, no rolling your own auth" },
-  { layer: "AI (soon)",  choice: "Vercel AI SDK + Gemini",      reason: "Streaming responses, tool-calling, structured output" },
-  { layer: "RAG (soon)", choice: "pgvector + embeddings",        reason: "Semantic search in the same Postgres — cosine similarity" },
+  { layer: "AI",         choice: "Vercel AI SDK + Gemini 3.5",  reason: "Streaming responses, RAG pipeline, gemini-embedding-2 for vectors" },
+  { layer: "RAG",        choice: "pgvector + embeddings",        reason: "Semantic search in the same Postgres — cosine similarity, no Pinecone needed" },
   { layer: "Styling",    choice: "Vanilla CSS (design tokens)", reason: "Zero runtime overhead, full control, no class soup" },
   { layer: "Deploy",     choice: "Vercel + Neon",               reason: "Edge runtime, auto-scaling, both have free tiers" },
 ];
@@ -50,7 +51,6 @@ const INTERVIEW_QA = [
 ];
 
 export default async function SettingsPage() {
-  // currentUser() is safe in Server Components — reads from the request context
   const user = await currentUser();
 
   const displayName  = user?.fullName || user?.firstName || user?.emailAddresses?.[0]?.emailAddress || "User";
@@ -90,30 +90,23 @@ export default async function SettingsPage() {
           </div>
         </div>
 
-        {/* Clerk-managed fields notice */}
+        {/* Clerk UserProfile modal — Client Component */}
         <div className="settings-managed-note">
           <span className="settings-managed-icon">🔒</span>
           <div>
             <p className="settings-managed-title">Secured by Clerk</p>
-            <p className="muted" style={{ fontSize: "0.8125rem" }}>
-              Password, connected accounts, and MFA are managed securely.
-              To change them, visit{" "}
-              <a
-                href="https://accounts.clerk.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="settings-ext-link"
-              >
-                accounts.clerk.com
-              </a>
+            <p className="muted" style={{ fontSize: "0.8125rem", marginBottom: "var(--space-3)" }}>
+              Password, connected accounts, and multi-factor authentication are managed securely via Clerk.
             </p>
+            {/* This Client Component opens the embedded Clerk UserProfile in a modal */}
+            <ClerkProfileModal />
           </div>
         </div>
       </section>
 
       {/* ── Data & Privacy ──────────────────────────── */}
       <section className="settings-section">
-        <h2 className="settings-section-title">Data & Privacy</h2>
+        <h2 className="settings-section-title">Data &amp; Privacy</h2>
         <div className="settings-data-row">
           <div className="settings-data-item">
             <p className="label" style={{ fontSize: "0.6875rem", marginBottom: "4px" }}>Database</p>
@@ -126,6 +119,10 @@ export default async function SettingsPage() {
           <div className="settings-data-item">
             <p className="label" style={{ fontSize: "0.6875rem", marginBottom: "4px" }}>Encryption</p>
             <p className="mono settings-data-val">TLS in transit, AES-256 at rest</p>
+          </div>
+          <div className="settings-data-item">
+            <p className="label" style={{ fontSize: "0.6875rem", marginBottom: "4px" }}>AI Context</p>
+            <p className="mono settings-data-val">Transaction embeddings stored in pgvector</p>
           </div>
         </div>
       </section>

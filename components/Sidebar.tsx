@@ -57,7 +57,7 @@ export default function Sidebar() {
             <span className="sidebar-user-name">
               {user?.firstName ?? "Account"}
             </span>
-            <span className="sidebar-user-hint">click to sign out</span>
+            <span className="sidebar-user-hint">manage account</span>
           </div>
         </div>
       </div>

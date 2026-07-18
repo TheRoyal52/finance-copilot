@@ -38,7 +38,7 @@
 // "Never trust the client" — validate on the server too.
 // ============================================================
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { embedText, buildTransactionText, toVectorLiteral } from "@/lib/ai/embed";
 
@@ -144,6 +144,8 @@ export async function addTransaction(
     }
 
     // --- Step 7: Revalidate pages ---
+    revalidateTag("transactions-data", "max");
+    revalidateTag("dashboard-data", "max");
     revalidatePath("/transactions");
     revalidatePath("/dashboard");
 
@@ -180,6 +182,8 @@ export async function deleteTransaction(
 
     await prisma.transaction.delete({ where: { id } });
 
+    revalidateTag("transactions-data", "max");
+    revalidateTag("dashboard-data", "max");
     revalidatePath("/transactions");
     revalidatePath("/dashboard");
 

@@ -1,9 +1,15 @@
 // lib/data/goals.ts — fixed field names to match actual Prisma schema
 // Goal model has: deadline (not targetDate), no description field
+//
+// CACHING STRATEGY:
+// getGoals()        → unstable_cache (60s TTL) — tag: goals-data
+// getGoalsSummary() → calls getGoals(), gets cache automatically
 
 import { prisma } from "@/lib/prisma";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
+// React cache() — deduplicates within one server request only
 const getDemoUserId = cache(async (): Promise<string> => {
   const user = await prisma.user.findFirst({
     where: { email: "test@financecopilot.dev" },
@@ -13,7 +19,8 @@ const getDemoUserId = cache(async (): Promise<string> => {
   return user.id;
 });
 
-export async function getGoals() {
+// ── Raw goals query (the real DB work) ──────────────────────────────────────
+async function fetchGoals() {
   const userId = await getDemoUserId();
 
   const goals = await prisma.goal.findMany({
@@ -52,12 +59,19 @@ export async function getGoals() {
       remaining,
       percentage,
       isComplete,
-      deadline: goal.deadline,   // correct field name
+      deadline: goal.deadline,
       daysLeft,
       dailyNeeded,
     };
   });
 }
+
+// Cached version — 60s TTL, invalidated by revalidateTag("goals-data")
+export const getGoals = unstable_cache(
+  fetchGoals,
+  ["goals"],
+  { revalidate: 60, tags: ["goals-data"] }
+);
 
 export async function getGoalsSummary() {
   const goals = await getGoals();

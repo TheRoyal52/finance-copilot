@@ -2,7 +2,7 @@
 // lib/actions/goals.ts — fixed to match actual Goal schema
 // Fields: name, targetAmount, currentAmount, deadline (not targetDate), no description
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 async function getDemoUserId(): Promise<string> {
@@ -36,6 +36,7 @@ export async function createGoal(formData: FormData): Promise<{ error?: string }
     await prisma.goal.create({
       data: { userId, name, targetAmount, currentAmount, deadline },
     });
+    revalidateTag("goals-data", "max");
     revalidatePath("/goals");
     return {};
   } catch (err) {
@@ -62,6 +63,7 @@ export async function addSavingsToGoal(
       data: { currentAmount: newAmount },
     });
 
+    revalidateTag("goals-data", "max");
     revalidatePath("/goals");
     return {};
   } catch (err) {
@@ -78,6 +80,7 @@ export async function deleteGoal(id: string): Promise<{ error?: string }> {
     if (!goal) return { error: "Goal not found or access denied." };
 
     await prisma.goal.delete({ where: { id } });
+    revalidateTag("goals-data", "max");
     revalidatePath("/goals");
     return {};
   } catch (err) {

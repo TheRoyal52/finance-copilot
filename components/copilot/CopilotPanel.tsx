@@ -21,6 +21,36 @@ import { useChat } from "ai/react";
 import type { UIMessage } from "ai";
 import { useEffect, useRef, useState } from "react";
 
+// ── Lightweight markdown renderer (no external deps) ──────────────────────
+// Handles the most common Gemini output patterns: **bold**, *italic*, bullet lists
+function renderMarkdown(text: string): React.ReactNode {
+  const lines = text.split("\n");
+  const out: React.ReactNode[] = [];
+  lines.forEach((line, li) => {
+    const bullet = line.match(/^[\s]*[-*]\s+(.+)$/);
+    if (bullet) {
+      out.push(
+        <span key={li} style={{ display: "flex", gap: "6px", alignItems: "flex-start", marginBottom: "2px" }}>
+          <span style={{ flexShrink: 0, color: "var(--brass)", fontWeight: 700 }}>•</span>
+          <span>{inlineMd(bullet[1], li)}</span>
+        </span>
+      );
+    } else if (line.trim() === "") {
+      if (li > 0) out.push(<span key={li} style={{ display: "block", height: "4px" }} />);
+    } else {
+      out.push(<span key={li}>{inlineMd(line, li)}{li < lines.length - 1 && <br />}</span>);
+    }
+  });
+  return <>{out}</>;
+}
+function inlineMd(text: string, k: number): React.ReactNode {
+  return text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/).map((p, i) => {
+    if (p.startsWith("**") && p.endsWith("**")) return <strong key={`${k}-${i}`}>{p.slice(2,-2)}</strong>;
+    if (p.startsWith("*") && p.endsWith("*")) return <em key={`${k}-${i}`}>{p.slice(1,-1)}</em>;
+    return p;
+  });
+}
+
 const SUGGESTED_PROMPTS = [
   { icon: "📊", text: "How much did I spend on food this month?" },
   { icon: "⚠️", text: "Which categories am I overspending in?" },
@@ -114,7 +144,9 @@ export default function CopilotPanel() {
             {messages.map((m: UIMessage) => (
               <div key={m.id} className={`copilot-msg copilot-msg--${m.role}`}>
                 {m.role === "assistant" && <span className="copilot-msg-icon">⬡</span>}
-                <div className="copilot-msg-content">{m.content}</div>
+                <div className="copilot-msg-content">
+                  {m.role === "assistant" ? renderMarkdown(m.content) : m.content}
+                </div>
               </div>
             ))}
 

@@ -10,10 +10,16 @@
 // Prisma generates: userId_categoryId_month as the constraint name
 // For upsert, we must pass { userId_categoryId_month: { userId, categoryId, month } }
 // AND month must be a DateTime (Date object), not a string
+//
+// CACHING STRATEGY:
+// getBudgetsWithSpending() → unstable_cache (60s TTL) — tag: budgets-data
+// getBudgetSummary()       → calls getBudgetsWithSpending(), cache for free
+// getCategoriesForBudget() → unstable_cache (300s TTL) — very static
 // ============================================================
 
 import { prisma } from "@/lib/prisma";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 // cache() deduplicates within one request — see lib/data/dashboard.ts for explanation
 const getDemoUserId = cache(async (): Promise<string> => {
@@ -46,8 +52,22 @@ function getMonthRange(firstDay: Date): { start: Date; end: Date } {
   return { start, end };
 }
 
-// ── Get budgets with actual spending for the current month ──
-export async function getBudgetsWithSpending(monthDate?: Date) {
+// Project spending for rest of month based on daily burn rate
+function projectEndOfMonth(spentSoFar: number, monthStart: Date): number {
+  const today = new Date();
+  const daysElapsed = Math.max(
+    1,
+    Math.floor((today.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24))
+  );
+  const totalDaysInMonth = new Date(
+    today.getFullYear(), today.getMonth() + 1, 0
+  ).getDate();
+  const dailyBurnRate = spentSoFar / daysElapsed;
+  return Math.round(dailyBurnRate * totalDaysInMonth);
+}
+
+// ── Raw fetch (the real DB work) ──────────────────────────────────────────
+async function fetchBudgetsWithSpending(monthDate?: Date) {
   const userId = await getDemoUserId();
   const firstDay = monthDate ?? getFirstDayOfCurrentMonth();
   const { start, end } = getMonthRange(firstDay);
@@ -111,22 +131,20 @@ export async function getBudgetsWithSpending(monthDate?: Date) {
   return budgetsWithSpending;
 }
 
-// Project spending for rest of month based on daily burn rate
-function projectEndOfMonth(spentSoFar: number, monthStart: Date): number {
-  const today = new Date();
-  const daysElapsed = Math.max(
-    1,
-    Math.floor((today.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24))
-  );
-  const totalDaysInMonth = new Date(
-    today.getFullYear(), today.getMonth() + 1, 0
-  ).getDate();
-  const dailyBurnRate = spentSoFar / daysElapsed;
-  return Math.round(dailyBurnRate * totalDaysInMonth);
-}
+// ── Cached version — 60s TTL ─────────────────────────────────────────────
+// Cache key does not include monthDate (always current month for page render)
+export const getBudgetsWithSpending = unstable_cache(
+  () => fetchBudgetsWithSpending(),
+  ["budgets-with-spending"],
+  { revalidate: 60, tags: ["budgets-data"] }
+);
 
 export async function getBudgetSummary(monthDate?: Date) {
-  const budgets = await getBudgetsWithSpending(monthDate);
+  // If a specific monthDate is passed (e.g. from chat), bypass cache
+  const budgets = monthDate
+    ? await fetchBudgetsWithSpending(monthDate)
+    : await getBudgetsWithSpending();
+
   const totalLimit = budgets.reduce((s, b) => s + b.limit, 0);
   const totalSpent = budgets.reduce((s, b) => s + b.spent, 0);
 
@@ -140,10 +158,15 @@ export async function getBudgetSummary(monthDate?: Date) {
   };
 }
 
-export async function getCategoriesForBudget() {
-  return prisma.category.findMany({
-    where: { type: "EXPENSE" },
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
-}
+// Expense categories — very static, cached 5 minutes
+export const getCategoriesForBudget = unstable_cache(
+  async () => {
+    return prisma.category.findMany({
+      where: { type: "EXPENSE" },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+  },
+  ["budget-categories"],
+  { revalidate: 300, tags: ["budgets-data"] }
+);

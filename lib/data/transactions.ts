@@ -1,23 +1,27 @@
 // lib/data/transactions.ts
 // Server-side data functions for the Transactions page.
 // Uses URL search params pattern for filtering.
+//
+// CACHING STRATEGY:
+// - getTransactionSummary()    → unstable_cache (60s TTL) — changes only when txs change
+// - getTransactionCategories() → unstable_cache (60s TTL) — relatively static
+// - getAllCategories()          → unstable_cache (300s TTL) — very static (admin-defined)
+// - getTransactions()          → NOT cached — uses dynamic search params per request
 
 import { Prisma, CategoryType } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
 
-// ── Get demo user ID dynamically (same as dashboard.ts) ───────
-// IMPORTANT: never hardcode the user ID — the DB auto-generates it.
-// The seed creates a user with email "test@financecopilot.dev"
-// We find them by email and use their actual DB id.
-// In Sprint 2 (Clerk auth), we'll replace with: auth().userId
-async function getDemoUserId(): Promise<string> {
+// ── Get demo user ID (deduplicated within one request via React cache) ───
+const getDemoUserId = cache(async (): Promise<string> => {
   const user = await prisma.user.findFirst({
     where: { email: "test@financecopilot.dev" },
     select: { id: true },
   });
   if (!user) throw new Error("Demo user not found. Run: npx tsx prisma/seed.ts");
   return user.id;
-}
+});
 
 export interface TransactionFilters {
   category?: string;
@@ -31,7 +35,7 @@ export interface TransactionFilters {
 
 const ITEMS_PER_PAGE = 20;
 
-// ── Main query: paginated, filtered transactions ───────────
+// ── Main query: paginated + filtered (NOT cached — depends on search params) ─
 export async function getTransactions(filters: TransactionFilters = {}) {
   const {
     category,
@@ -46,7 +50,6 @@ export async function getTransactions(filters: TransactionFilters = {}) {
   const userId = await getDemoUserId();
   const skip = (page - 1) * limit;
 
-  // Build WHERE clause step by step — avoids union type conflicts
   const where: Prisma.TransactionWhereInput = { userId };
 
   if (category) {
@@ -95,42 +98,57 @@ export async function getTransactions(filters: TransactionFilters = {}) {
   };
 }
 
-// ── All categories that have transactions (for filter dropdown) ─
-export async function getTransactionCategories() {
-  const userId = await getDemoUserId();
-  return prisma.category.findMany({
-    where: { transactions: { some: { userId } } },
-    select: { name: true, type: true },
-    orderBy: { name: "asc" },
-  });
-}
+// ── All categories that have transactions (for filter dropdown) ─────────────
+// Cached 60s — updates when a new category gets its first transaction
+export const getTransactionCategories = unstable_cache(
+  async () => {
+    const userId = await getDemoUserId();
+    return prisma.category.findMany({
+      where: { transactions: { some: { userId } } },
+      select: { name: true, type: true },
+      orderBy: { name: "asc" },
+    });
+  },
+  ["tx-categories"],
+  { revalidate: 60, tags: ["transactions-data"] }
+);
 
-// ── All categories with id (for Add Transaction drawer) ────
-export async function getAllCategories() {
-  return prisma.category.findMany({
-    select: { id: true, name: true, type: true },
-    orderBy: [{ type: "asc" }, { name: "asc" }],
-  });
-}
+// ── All categories with id (for Add Transaction drawer) ─────────────────────
+// Cached 300s — categories are admin-defined and rarely change
+export const getAllCategories = unstable_cache(
+  async () => {
+    return prisma.category.findMany({
+      select: { id: true, name: true, type: true },
+      orderBy: [{ type: "asc" }, { name: "asc" }],
+    });
+  },
+  ["all-categories"],
+  { revalidate: 300, tags: ["transactions-data"] }
+);
 
-// ── Summary stats for the page header ─────────────────────
-export async function getTransactionSummary() {
-  const userId = await getDemoUserId();
-  const [totalIncome, totalExpenses, count] = await Promise.all([
-    prisma.transaction.aggregate({
-      where: { userId, amount: { gt: 0 } },
-      _sum: { amount: true },
-    }),
-    prisma.transaction.aggregate({
-      where: { userId, amount: { lt: 0 } },
-      _sum: { amount: true },
-    }),
-    prisma.transaction.count({ where: { userId } }),
-  ]);
+// ── Summary stats for the page header ──────────────────────────────────────
+// Cached 60s — updates when transactions change
+export const getTransactionSummary = unstable_cache(
+  async () => {
+    const userId = await getDemoUserId();
+    const [totalIncome, totalExpenses, count] = await Promise.all([
+      prisma.transaction.aggregate({
+        where: { userId, amount: { gt: 0 } },
+        _sum: { amount: true },
+      }),
+      prisma.transaction.aggregate({
+        where: { userId, amount: { lt: 0 } },
+        _sum: { amount: true },
+      }),
+      prisma.transaction.count({ where: { userId } }),
+    ]);
 
-  return {
-    income: totalIncome._sum.amount ?? 0,
-    expenses: Math.abs(totalExpenses._sum.amount ?? 0),
-    count,
-  };
-}
+    return {
+      income: totalIncome._sum.amount ?? 0,
+      expenses: Math.abs(totalExpenses._sum.amount ?? 0),
+      count,
+    };
+  },
+  ["tx-summary"],
+  { revalidate: 60, tags: ["transactions-data", "dashboard-data"] }
+);
