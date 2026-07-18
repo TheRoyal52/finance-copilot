@@ -1,63 +1,62 @@
 // lib/ai/embed.ts
 // ============================================================
-// EMBEDDING PIPELINE
+// EMBEDDING PIPELINE — using @ai-sdk/google (NOT @google/generative-ai)
 // ============================================================
 //
-// WHAT IS AN EMBEDDING?
-// A list of numbers (vector) that represents the "meaning" of text.
-// The Gemini embedding model converts text into 768 floats.
+// WHY WE SWITCHED FROM @google/generative-ai TO @ai-sdk/google:
+// The @google/generative-ai SDK calls the v1beta endpoint:
+//   https://generativelanguage.googleapis.com/v1beta/models/...
 //
-// WHY 768 NUMBERS?
-// Each number represents a dimension in "semantic space".
-// Words/phrases with similar meaning cluster together in this space.
-// "Zomato order" and "Swiggy delivery" → very close vectors
-// "Netflix subscription" and "salary credit" → far apart vectors
+// But text-embedding-004 is only available on v1:
+//   https://generativelanguage.googleapis.com/v1/models/text-embedding-004
 //
-// COSINE SIMILARITY:
-// Two vectors are "similar" if the angle between them is small.
-// cos(0°) = 1.0 (identical direction = same meaning)
-// cos(90°) = 0.0 (perpendicular = unrelated)
-// cos(180°) = -1.0 (opposite direction = opposite meaning)
+// @ai-sdk/google (Vercel AI SDK) calls the correct v1 endpoint
+// AND we already have it installed for the /api/chat route.
+// Using one library for both chat + embeddings keeps things consistent.
 //
-// In pgvector: <=> operator computes cosine DISTANCE (1 - similarity)
-// So smaller <=> = more similar
+// EMBEDDING DIMENSIONS: text-embedding-004 → 768 floats
+// Each float captures a different "semantic dimension" of the text.
+// Similar meanings → close in 768-D space → small cosine distance (<=>) in pgvector.
 //
-// INTERVIEW: "How does your RAG know which transactions are relevant?"
-// "We embed both the user's question and every transaction description
-//  using the same model. Then we find the transactions whose embeddings
-//  are closest to the query embedding using cosine distance in pgvector."
+// INTERVIEW ANSWER:
+// "We embed transaction descriptions using Google's text-embedding-004 model
+//  via the Vercel AI SDK. The SDK abstracts the v1 vs v1beta distinction and
+//  gives us a consistent interface that works with both embeddings and streaming chat."
 // ============================================================
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { embed } from "ai";
+import { google } from "@ai-sdk/google";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
-// text-embedding-004 is Google's latest embedding model
-// Produces 768-dimensional vectors
-const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
+// The model used for ALL embeddings (query + transactions must use the same model)
+// text-embedding-004: 768-dimensional, best quality, available via v1 endpoint
+const embeddingModel = google.textEmbeddingModel("text-embedding-004");
 
 // Generate a single embedding vector for a piece of text
 // Returns: number[] of length 768
 export async function embedText(text: string): Promise<number[]> {
-  const result = await embeddingModel.embedContent(text);
-  return result.embedding.values;
+  const { embedding } = await embed({
+    model: embeddingModel,
+    value: text,
+  });
+  return embedding;
 }
 
 // Convert a number[] to Postgres vector literal: "[0.1,0.2,...]"
-// pgvector requires this exact format for INSERT/UPDATE
+// pgvector requires this exact format for INSERT/UPDATE via raw SQL
 export function toVectorLiteral(embedding: number[]): string {
   return `[${embedding.join(",")}]`;
 }
 
-// Build a descriptive text string for a transaction that captures context
-// Better context → better embedding → better search results
-// Include category and sign so AI knows income vs expense
+// Build a rich descriptive text string for a transaction
+// Better context → better embedding → better semantic search results
+// We include: type (expense/income), description, category, and amount
+// so the AI knows both WHAT was spent and HOW MUCH
 export function buildTransactionText(
   description: string,
   category: string,
   amount: number
 ): string {
-  const type    = amount < 0 ? "expense" : "income";
-  const absAmt  = Math.abs(amount);
+  const type   = amount < 0 ? "expense" : "income";
+  const absAmt = Math.abs(amount);
   return `${type}: ${description} (${category}, ₹${absAmt.toFixed(0)})`;
 }
