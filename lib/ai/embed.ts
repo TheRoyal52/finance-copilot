@@ -34,8 +34,14 @@ const googleAI = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY!,
 });
 
-// text-embedding-004: 768-dimensional, available on v1 endpoint (not v1beta)
-const embeddingModel = googleAI.textEmbeddingModel("text-embedding-004");
+// We use 'gemini-embedding-2' instead of 'text-embedding-004' because for some
+// Google AI Studio keys, 'text-embedding-004' returns a 404 (Not Found).
+// 'gemini-embedding-2' is the newer model, but it defaults to 3072 dimensions.
+// Since our Postgres pgvector is initialized as vector(768), we must explicitly
+// pass outputDimensionality: 768 to avoid SQL casting errors.
+const embeddingModel = googleAI.textEmbeddingModel("gemini-embedding-2", {
+  outputDimensionality: 768,
+});
 
 export async function embedText(text: string): Promise<number[]> {
   const { embedding } = await embed({
